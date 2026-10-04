@@ -1,0 +1,41 @@
+# --- Secrets / local config (never commit) ---
+.env
+.env.*
+!.env.example
+
+# --- Runtime data: user uploads, generated comics, attachments (private) ---
+# The app creates these folders itself on startup (backend/config.py).
+storage/
+
+# --- Test suite (kept local, not shipped) ---
+tests/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# --- Model weights / caches safety net ---
+*.bin
+*.safetensors
+*.ckpt
+*.pt
+
+# --- Tools / caches ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

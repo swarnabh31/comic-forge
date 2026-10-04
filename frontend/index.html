@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comic Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="chat.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Comic<span>Forge</span></h1>
+    <p class="tagline">One idea in. A whole comic out.</p>
+  </header>
+
+  <main class="layout">
+    <aside class="cast-panel">
+      <h2>Cast<span class="badge" id="castCount">0</span></h2>
+      <p class="hint">Upload a photo or sketch for each character. Describe them once and Comic Forge keeps drawing them the same way, panel after panel. If you leave the description blank, the app reads the picture and writes one for you (editable).</p>
+
+      <div id="castList" class="cast-list"></div>
+
+      <form id="castForm" class="cast-form">
+        <input type="text" id="castName" placeholder="Character name" required />
+        <input type="file" id="castFiles" accept="image/*" multiple required />
+        <textarea id="castDesc" rows="2" class="cast-desc-input"
+                  placeholder="Describe them (optional — left blank, we'll auto-describe from the picture)"></textarea>
+        <button type="submit">+ Add character</button>
+      </form>
+    </aside>
+
+    <section class="main-panel">
+      <form id="generateForm" class="generate-form">
+        <label for="prompt">Your idea</label>
+        <textarea id="prompt" rows="3" placeholder="A grumpy cat discovers she can talk, and only her worst enemy believes her..." required></textarea>
+
+        <div class="row">
+          <div class="field">
+            <label for="modelSelect">Model</label>
+            <select id="modelSelect"></select>
+          </div>
+          <div class="field">
+            <label for="panelCount">Panels: <span id="panelCountLabel">6</span></label>
+            <input type="range" id="panelCount" min="2" max="8" value="6" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="artStyle">Art style</label>
+          <select id="artStyle"><option>Loading styles…</option></select>
+          <p id="styleDesc" class="hint style-desc"></p>
+          <input type="text" id="customStyle" class="hidden" maxlength="200"
+                 placeholder="Describe your style, e.g. woodblock print, limited red and black palette" />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label id="textSizeLabel">Text size in bubbles</label>
+            <div class="seg" id="textSize" role="radiogroup" aria-labelledby="textSizeLabel">
+              <button type="button" role="radio" data-size="small" aria-checked="false"><span style="font-size:.8rem">Aa</span>Small</button>
+              <button type="button" role="radio" data-size="medium" aria-checked="true" class="on"><span style="font-size:1.05rem">Aa</span>Medium</button>
+              <button type="button" role="radio" data-size="large" aria-checked="false"><span style="font-size:1.35rem">Aa</span>Large</button>
+            </div>
+            <p class="hint">Bubbles resize to fit, and the artist leaves room for them. Change it later without redrawing.</p>
+          </div>
+          <div class="field">
+            <label for="quality">Speed / quality</label>
+            <select id="quality">
+              <option value="draft">Draft: fastest (~2.5× quicker)</option>
+              <option value="standard" selected>Standard</option>
+              <option value="high">High: more detail, slower</option>
+            </select>
+            <p class="hint">Try ideas in Draft, then make the keeper in High.</p>
+          </div>
+        </div>
+
+        <button type="submit" id="generateBtn" class="generate-btn">Generate comic!</button>
+      </form>
+
+      <div id="progressArea" class="progress-area hidden">
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        <p id="progressMessage"></p>
+        <div id="liveStrip" class="live-strip" aria-label="Panels drawn so far"></div>
+      </div>
+
+      <div id="resultArea" class="result-area hidden">
+        <img id="pageImage" alt="Generated comic page" />
+        <ul id="warnings" class="warnings hidden"></ul>
+        <div class="resize-row">
+          <span>Text size:</span>
+          <div class="seg seg-sm" id="resultTextSize" role="radiogroup" aria-label="Text size of the finished comic">
+            <button type="button" role="radio" data-size="small" aria-checked="false">S</button>
+            <button type="button" role="radio" data-size="medium" aria-checked="false">M</button>
+            <button type="button" role="radio" data-size="large" aria-checked="false">L</button>
+          </div>
+          <span id="resizeNote" class="hint"></span>
+        </div>
+        <div class="result-actions">
+          <a id="downloadBtn" class="download-btn" download>Download comic</a>
+          <button id="againBtn" type="button">Make another</button>
+        </div>
+      </div>
+
+      <div id="errorArea" class="error-area hidden"></div>
+    </section>
+  </main>
+
+  <!-- Comic assistant: appears bottom-left once a comic exists -->
+  <div id="chatDock" class="chat-dock hidden">
+    <button id="chatToggle" type="button" class="chat-toggle" aria-expanded="false" aria-controls="chatPanel">Edit with chat</button>
+    <section id="chatPanel" class="chat-panel hidden" role="dialog" aria-label="Comic assistant">
+      <header class="chat-head">
+        <h2>Comic <span>Assistant</span></h2>
+        <span id="chatVersion" class="chat-version">v1</span>
+        <button id="chatUndo" type="button" title="Undo the last change" disabled>Undo</button>
+        <button id="chatRedo" type="button" title="Redo" disabled>Redo</button>
+        <button id="chatClose" type="button" class="chat-close" aria-label="Close chat">✕</button>
+      </header>
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
+      <div id="chatSuggestions" class="chat-suggestions"></div>
+      <div id="chatPending" class="chat-pending"></div>
+      <form id="chatForm" class="chat-form">
+        <button id="chatAttach" type="button" class="chat-attach" aria-label="Attach a PDF, Word document, PNG, JPG or SVG" title="Attach PDF, DOCX, PNG, JPG or SVG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>
+        </button>
+        <input id="chatFile" type="file" hidden multiple
+               accept=".pdf,.docx,.png,.jpg,.jpeg,.svg,application/pdf,image/png,image/jpeg,image/svg+xml,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        <textarea id="chatInput" rows="1" placeholder="Ask for a change…" aria-label="Message the comic assistant"></textarea>
+        <button id="chatSend" type="submit" class="chat-send">Send</button>
+      </form>
+      <p class="chat-hint">Enter to send · Shift+Enter for a new line · drop files anywhere here</p>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>
